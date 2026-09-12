@@ -88,9 +88,8 @@ async def process_days(message: types.Message, state: FSMContext):
     days = int(message.text)
     await state.update_data(days=days)
     await message.answer(
-        "⚖️ **Введіть розмір договірної пені (% за кожен день):**\n"
-        "*(Якщо в договорі пеню не вказано, введіть 0. Зазвичай вказують 0.1)*",
-        parse_mode="Markdown"
+        "⚖️ Введіть розмір договірної пені (% за кожен день):\n"
+        "(Якщо в договорі пеню не вказано, введіть 0. Зазвичай вказують 0.1)"
     )
     await state.set_state(CalcState.waiting_for_rate)
 
@@ -132,7 +131,7 @@ async def process_rate(message: types.Message, state: FSMContext):
             [InlineKeyboardButton(text="🔄 Зробити новий розрахунок", callback_data="check_sub")]
         ])
         
-        await message.answer(res_text, parse_mode="Markdown", reply_markup=kb)
+        await message.answer(res_text, reply_markup=kb)
         await state.clear()
         
     except ValueError:
