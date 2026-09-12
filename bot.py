@@ -34,7 +34,6 @@ def sub_keyboard():
         [InlineKeyboardButton(text="📢 Підписатися на @smartdoc_ua", url=f"https://t.me/{MAIN_CHANNEL[1:]}")],
         [InlineKeyboardButton(text="✅ Я підписався! Розпочати розрахунок", callback_data="check_sub")]
     ])
-
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
     await state.clear()
