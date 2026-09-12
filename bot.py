@@ -1,13 +1,15 @@
 import asyncio
 import os
 from aiohttp import web
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_ID = "@smartdoc_ua"  # Юзернейм вашого каналу
+
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -29,14 +31,50 @@ async def start_web_server():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
+# Функція перевірки підписки
+async def check_subscription(user_id: int) -> bool:
+    try:
+        member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
+        return member.status in ["creator", "administrator", "member"]
+    except Exception:
+        return False
+
+def get_sub_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📢 Підписатися на канал", url="https://t.me/smartdoc_ua")],
+        [InlineKeyboardButton(text="✅ Я підписався / Перевірити", callback_data="check_sub")]
+    ])
+
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
     await state.clear()
+    
+    is_sub = await check_subscription(message.from_user.id)
+    if not is_sub:
+        await message.answer(
+            "⚠️ Для користування калькулятором необхідно бути підписаним на наш офіційний канал SmartDoc!",
+            reply_markup=get_sub_keyboard()
+        )
+        return
+
     await message.answer(
         "Вітаємо! Цей бот допоможе вам розрахувати заборгованість, пеню, 3% річних та інфляційні втрати.\n\n"
         "Введіть суму основного боргу в гривнях (наприклад: 10000 або 15500.50):"
     )
     await state.set_state(CalcState.waiting_for_sum)
+
+@dp.callback_query(F.data == "check_sub")
+async def callback_check_sub(callback: types.CallbackQuery, state: FSMContext):
+    is_sub = await check_subscription(callback.from_user.id)
+    if is_sub:
+        await callback.message.delete()
+        await callback.message.answer(
+            "✅ Дякуємо за підписку!\n\n"
+            "Введіть суму основного боргу в гривнях (наприклад: 10000 або 15500.50):"
+        )
+        await state.set_state(CalcState.waiting_for_sum)
+    else:
+        await callback.answer("❌ Ви все ще не підписалися на канал!", show_alert=True)
 
 @dp.message(CalcState.waiting_for_sum)
 async def process_sum(message: types.Message, state: FSMContext):
