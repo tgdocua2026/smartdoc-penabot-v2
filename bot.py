@@ -35,20 +35,14 @@ def sub_keyboard():
         [InlineKeyboardButton(text="✅ Я підписався! Розпочати розрахунок", callback_data="check_sub")]
     ])
 
-@dp.message(CommandStart())
+@dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
     await state.clear()
-    if await check_subscription(message.from_user.id):
-        await message.answer(
-            "👋 Вітаємо у юридичному калькуляторі від **@smartdoc_ua**!\n\n"
-            "Цей бот розраховує:\n"
-            "• Договірну пеню (% за кожен день)\n"
-            "• 3% річних (ст. 625 ЦК України)\n"
-            "• Інфляційні втрати за період\n\n"
-            "👇 **Введіть суму основного боргу (у грн):**\n*(Наприклад: 50000)*",
-            parse_mode="Markdown"
-        )
-        await state.set_state(CalcState.waiting_for_sum)
+    await message.answer(
+        "Вітаємо! Цей бот допоможе вам розрахувати заборгованість, пеню, 3% річних та інфляційні втрати.\n\n"
+        "Введіть суму основного боргу в гривнях (наприклад: 10000 або 15500.50):"
+    )
+    await state.set_state(CalcState.waiting_for_sum)
     else:
         await message.answer(
             "🔒 **Доступ обмежено!**\n\n"
