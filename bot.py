@@ -8,7 +8,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = "@smartdoc_ua"  # Юзернейм вашого каналу
+CHANNEL_ID = "@smartdoc_ua"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -18,7 +18,6 @@ class CalcState(StatesGroup):
     waiting_for_days = State()
     waiting_for_rate = State()
 
-# Заглушка для Render Web Service (відкриває порт)
 async def handle(request):
     return web.Response(text="Bot is running!")
 
@@ -31,7 +30,6 @@ async def start_web_server():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-# Функція перевірки підписки
 async def check_subscription(user_id: int) -> bool:
     try:
         member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
@@ -58,7 +56,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
         return
 
     await message.answer(
-        "Вітаємо! Цей бот допоможе вам розрахувати заборгованість, пеню, 3% річних та інфляційні втрати.\n\n"
+        "Вітаємо! Це калькулятор пені та 3% річних за прострочення грошових зобов'язань.\n\n"
         "Введіть суму основного боргу в гривнях (наприклад: 10000 або 15500.50):"
     )
     await state.set_state(CalcState.waiting_for_sum)
@@ -110,9 +108,7 @@ async def process_rate(message: types.Message, state: FSMContext):
         
         penya = (debt_sum * (daily_rate / 100)) * days
         three_percent = (debt_sum * 3 * days) / 36500
-        inflation_rate = 0.006 * (days / 30)
-        inflation_losses = debt_sum * inflation_rate
-        total_sum = debt_sum + penya + three_percent + inflation_losses
+        total_sum = debt_sum + penya + three_percent
         
         res_text = (
             f"РЕЗУЛЬТАТ РОЗРАХУНКУ СТЯГНЕННЯ:\n\n"
@@ -120,8 +116,7 @@ async def process_rate(message: types.Message, state: FSMContext):
             f"Період: {days} днів\n\n"
             f"Деталізація нарахованих сум:\n"
             f"• Договірна пеня ({daily_rate}%/день): {penya:,.2f} грн\n"
-            f"• 3% річних (ст. 625 ЦК України): {three_percent:,.2f} грн\n"
-            f"• Інфляційні втрати: {inflation_losses:,.2f} грн\n\n"
+            f"• 3% річних (ст. 625 ЦК України): {three_percent:,.2f} грн\n\n"
             f"УСЬОГО ДО СТЯГНЕННЯ: {total_sum:,.2f} грн\n\n"
             f"Напишіть юристу: @tvydoc_help_bot\n"
             f"Шаблони документів: @smartdoc_ua"
